@@ -9,6 +9,13 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 1
+    page_size_query_param = 'page'
 
 
 class RegisterAPI(APIView):
@@ -42,9 +49,16 @@ class ClassPerson(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get(self, request):
-        objPerson = Person.objects.filter(team__isnull=False)
-        serializer = PersonSerializer(objPerson, many=True)
-        return Response(serializer.data)
+        try:
+            # objPerson = Person.objects.filter(team__isnull=False)
+            objPerson = Person.objects.all()
+            page = request.GET.get('page', 1)
+            page_size = 1
+            paginator = Paginator(objPerson, page_size)
+            serializer = PersonSerializer(paginator.page(page), many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'message': 'invalid page number'})
 
     def post(self, request):
         return Response('this is post method from APIView class')
@@ -103,6 +117,7 @@ def person(request):
 class PersonViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
     queryset = Person.objects.all()
+    pagination_class = CustomPagination
 
     def list(self, request):
         search = request.GET.get('search')
@@ -111,5 +126,9 @@ class PersonViewSet(viewsets.ModelViewSet):
         if search:
             queryset = queryset.filter(name__startswith=search)
 
+        paginated_queryset = self.paginate_queryset(queryset)
+
+        serializer = PersonSerializer(paginated_queryset, many=True)
+
         serializer = PersonSerializer(queryset, many=True)
-        return Response({'status': 200, 'data': serializer.data})
+        return self.get_paginated_response({'status': 200, 'data': serializer.data})
