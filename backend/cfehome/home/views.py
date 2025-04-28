@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from home.models import Person
 from home.serializer import PersonSerializer
 from rest_framework.views import APIView
+from rest_framework import viewsets
 
 
 class ClassPerson(APIView):
@@ -68,3 +69,18 @@ def person(request):
         obj = Person.objects.get(id=data['id'])
         obj.delete()
         return Response({'message': 'Person deleted'})
+
+
+class PersonViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSerializer
+    queryset = Person.objects.all()
+
+    def list(self, request):
+        search = request.GET.get('search')
+        queryset = self.queryset
+
+        if search:
+            queryset = queryset.filter(name__startswith=search)
+
+        serializer = PersonSerializer(queryset, many=True)
+        return Response({'status': 200, 'data': serializer.data})
