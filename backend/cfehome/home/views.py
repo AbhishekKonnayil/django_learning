@@ -7,6 +7,8 @@ from rest_framework import viewsets
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
 class RegisterAPI(APIView):
@@ -20,6 +22,8 @@ class RegisterAPI(APIView):
 
 
 class LoginAPI(APIView):
+    permission_classes = []
+
     def post(self, request):
         _data = request.data
         serializer = LoginSerializer(data=_data)
@@ -34,18 +38,16 @@ class LoginAPI(APIView):
 
 
 class ClassPerson(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
     def get(self, request):
         objPerson = Person.objects.filter(team__isnull=False)
         serializer = PersonSerializer(objPerson, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        data = request.data
-        serializer = PersonSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+        return Response('this is post method from APIView class')
 
 
 @api_view(['GET', 'POST'])
@@ -70,9 +72,9 @@ def person(request):
         return Response(serializer.data)
     elif request.method == 'POST':
         data = request.data
-        # serializer = PersonSerializer(data=data)
-        # if serializer.is_valid():
-        #    serializer.save()
+        serializer = PersonSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
         return Response({'data': 'person from api view fn'})
         return Response(serializer.errors)
     elif request.method == 'PUT':
