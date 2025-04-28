@@ -1,9 +1,36 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from home.models import Person
-from home.serializer import PersonSerializer
+from home.serializer import PersonSerializer, RegisterSerializer, LoginSerializer
 from rest_framework.views import APIView
 from rest_framework import viewsets
+from django.contrib.auth import authenticate
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+
+
+class RegisterAPI(APIView):
+    def post(self, request):
+        _data = request.data
+        serializer = RegisterSerializer(data=_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'user created succesfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': serializer.errors}, status=status.HTTP_404_NOT_FOUND)
+
+
+class LoginAPI(APIView):
+    def post(self, request):
+        _data = request.data
+        serializer = LoginSerializer(data=_data)
+        if not serializer.is_valid():
+            return Response({'message': serializer.errors}, status=status.HTTP_404_NOT_FOUND)
+        user = authenticate(
+            username=_data['username'], password=_data['password'])
+        if not user:
+            return Response({'message': 'invalid credentials'}, status == status.HTTP_404_NOT_FOUND)
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'message': 'Login successfull', 'token': str(token)}, status=status.HTTP_200_OK)
 
 
 class ClassPerson(APIView):
@@ -43,10 +70,10 @@ def person(request):
         return Response(serializer.data)
     elif request.method == 'POST':
         data = request.data
-        serializer = PersonSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+        # serializer = PersonSerializer(data=data)
+        # if serializer.is_valid():
+        #    serializer.save()
+        return Response({'data': 'person from api view fn'})
         return Response(serializer.errors)
     elif request.method == 'PUT':
         data = request.data
