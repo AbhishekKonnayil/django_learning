@@ -20,7 +20,8 @@ def index(request):
 @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 def person(request):
     if request.method == 'GET':
-        objPerson = Person.objects.all()
+        objPerson = Person.objects.filter(team__isnull=False)
+        print(objPerson)
         serializer = PersonSerializer(objPerson, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':

@@ -1,13 +1,26 @@
 from rest_framework import serializers
 from home.models import Person
+from home.models import Team
+
+
+class TeamSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Team
+        fields = ['team_name']
 
 
 class PersonSerializer(serializers.ModelSerializer):
+    team = TeamSerializer()
+    team_info=serializers.SerializerMethodField()
 
     class Meta:
         model = Person
         fields = '__all__'
-        # fields = ['name', 'age', 'location']
+        depth = 1
+    
+    def get_team_info(self,obj):
+        return "extra field"
 
     def validate(self, data):
         spl_char = '!@#$%^&*()_+{}|:"<>?'
